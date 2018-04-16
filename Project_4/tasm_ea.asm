@@ -83,14 +83,17 @@ _changeline proc near
     ret
 endp
 _proc_Pg_1 proc near
+	;修改int 9h
 	call mod_int_9
 	mov bx,offset usr_pg
 	mov word ptr [bx],100h
 	mov word ptr [bx+2],900h
+	;调用用户程序
 	call  dword ptr [bx]
 	mov ax,cs
 	mov ds,ax
 	mov es,ax
+	;恢复int 9h
 	call reset_int_9
 	ret
 endp
