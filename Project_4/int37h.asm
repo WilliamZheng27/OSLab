@@ -17,7 +17,7 @@ int_34:
 	mov	 bx, 0007h
 	; 页号为0(BH = 0) 黑底白字(BL = 07h)
 	mov  dh, 18		; 行号=10
-	mov	 dl, 60		; 列号=10
+	mov	 dl, 50		; 列号=10
 	int	10h		; BIOS的10h功能：显示一行字符
     pop dx
     pop cx

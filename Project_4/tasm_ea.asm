@@ -46,6 +46,7 @@ datadef:
 	up_edge equ 0a2h
 _put proc near
 	;int put(char,int)
+	;在光标位置显示一个字符
 	;要显示的值放在ax中
 	push bp
 	mov bp,sp
@@ -53,7 +54,9 @@ _put proc near
 	mov cx,[bp+4]
 	;弹出int
 	mov bx,[bp+6]
+	;将字符和属性放在cx中
 	mov ch,bl
+	;调用0号系统中断
 	mov ah,0
 	int 20h
 	mov sp,bp
@@ -61,13 +64,19 @@ _put proc near
     ret
 endp
 _clean proc near
+	;int clean()
+	;清空屏幕并重置光标
+	;调用3号系统中断
 	mov ah,3
 	int 20h
+	;重置光标到左上角
 	mov word ptr x,1
 	mov word ptr y,1
     ret
 endp
 _changeline proc near
+	;调用2号系统中断
+	;光标换行
 	mov al,2
 	mov ah,2
 	int 20h
@@ -82,9 +91,7 @@ _proc_Pg_1 proc near
 	mov ax,cs
 	mov ds,ax
 	mov es,ax
-	mov ah,0
-	mov al,3
-	int 10h
+	call reset_int_9
 	ret
 endp
 
@@ -112,6 +119,7 @@ _input proc near
 endp
 
 modded_int8:
+	;保护现场
 	push ax
 	push bx
 	push ds
@@ -120,6 +128,7 @@ modded_int8:
 	mov ds,ax
 	mov ax,0b800h
 	mov es,ax
+	;判断移动方向
 	mov ax,position
 	cmp ax,0
 	je down
@@ -129,6 +138,7 @@ modded_int8:
 	je up
 	cmp ax,3
 	je left
+;向下移动
 down:
     inc int8_x
     mov ax,int8_x
@@ -140,6 +150,7 @@ down:
     inc int8_y
 	mov position,1
     jmp int8_display
+;向右移动
 right:
     inc int8_y
     mov ax,int8_y
@@ -151,6 +162,7 @@ right:
     mov int8_y,79
 	mov position,2
     jmp int8_display
+;向上移动
 up:
     dec int8_x
     mov ax,int8_x
@@ -162,6 +174,7 @@ up:
     mov int8_x,0
 	mov position,3
     jmp int8_display
+;向左移动
 left:
     dec int8_y
     mov ax,int8_y
@@ -174,6 +187,7 @@ left:
 	mov position,0
     jmp int8_display
 int8_display:
+	;控制显示范围在26个大写字母
     cmp char,'Z'
     jne reset_char
     mov char,'A' - 1
@@ -190,14 +204,17 @@ int8_display:
 	mov ah,color
 	mov al,char
 	mov es:[bx],ax
+	;变色
 	inc color
+	;发送EOI
+    mov al,20h
+    out 20h,al
+    out 0A0h,al
+	;恢复现场
 	pop es
 	pop ds
 	pop bx
 	pop ax
-    mov al,20h
-    out 20h,al
-    out 0A0h,al
     iret
 timing:
 	;设定延迟
@@ -207,9 +224,11 @@ timing:
     ret
 
 modded_int9:
+	;调用原int 9h
 	in al,60h
 	pushf
 	call dword ptr cs:[old_int9h]
+	;保护现场
 	push ds
     push ax
 	push bx
@@ -220,6 +239,7 @@ modded_int9:
     mov ax,0b800h
     mov es,ax
 intpro:
+	;计算显示位置的偏移量
 	mov ax,ouch_x
 	mov cx,80
 	mul cx
@@ -227,6 +247,7 @@ intpro:
 	mov cx,2
 	mul cx
 	mov bx,ax
+	;显示“ouch”
     mov al,'o'
 	mov ah,7
 	mov word ptr es:[bx],ax
@@ -244,6 +265,7 @@ intpro:
 	mov word ptr es:[bx],ax
 	inc ouch_x
 	ed_ouch:
+	;恢复现场
 	pop es
 	pop cx
 	pop bx
@@ -252,6 +274,7 @@ intpro:
 	iret
 
 sys_call:
+	;判断中断功能
 	cmp ah,0
 	je sys_0
 	cmp ah,1
@@ -259,7 +282,7 @@ sys_call:
 	cmp ah,2
 	je sys_2
 	cmp ah,3
-	jz bar_3
+	jz bar_3;解决je跳转范围不够
 	bar_3:
 	jmp sys_3
 sys_0:
@@ -410,14 +433,11 @@ mod_int_8 proc near
 	mov es,ax
 	sti
 	ret
+endp
 mod_int_9 proc near
 	;设置int 9h
 	xor ax,ax			; AX = 0
 	mov es,ax			; ES = 0 
-	push es:[4*9]
-	pop es:[200h]
-	push es:[4*9+2]
-	pop es:[202h]
 	mov bx,word ptr es:[24h];保存原int 9h中断向量
 	mov word ptr [old_int9h],bx
 	mov bx,word ptr es:[26h]
@@ -428,8 +448,17 @@ mod_int_9 proc near
 	mov es,ax
 	ret
 endp
+reset_int_9 proc near
+	xor ax,ax
+	mov es,ax
+	mov bx,word ptr [old_int9h]
+	mov word ptr es:[24h],bx
+	mov bx,word ptr [old_int9h + 2]
+	mov word ptr es:[26h],bx
+	mov bx,cs
+	mov es,bx
+	ret
 endp
-
 
 
 
