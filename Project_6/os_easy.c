@@ -16,6 +16,29 @@ char inf_Pg4[] = "Address:900H:700H Sector:8 Size: 1sec\n";
 char cmd[] = "MyOS>";
 char keyboardInput[30];
 enum opp{help,ls,error,cleanup};
+
+typedef struct PCB
+{
+	int ax;
+	int bx;
+	int cx;
+	int dx;
+	int si;
+	int di;
+	int bp;
+	int es;
+	int ds;
+	int ss;
+	int sp;
+	int ip;
+	int cs;
+	int flags;
+	int status;
+	char p_name;
+};
+struct PCB PCBlist[5];
+
+
 extern put(char,int);
 extern changeline();
 extern clean();
