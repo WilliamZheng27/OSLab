@@ -9,6 +9,7 @@ char errorMsg[] = "Command not found.Please check your input.\n";
 char exitMsg[] = "Do you want to clean up the screen?[Y/N]";
 char lsTable[] = "1.Pg_1.com\n2.Pg_2.com\n3.Pg_3.com\n4.Pg_4.com";
 char inf[] = "Address:800H:100H Sector:2 Size: 3sec\n";
+char* inf_running[];
 char inf_Pg1[] = "Address:900H:100H Sector:5 Size: 1sec\n";
 char inf_Pg2[] = "Address:900H:300H Sector:6 Size: 1sec\n";
 char inf_Pg3[] = "Address:900H:500H Sector:7 Size: 1sec\n";
@@ -16,7 +17,8 @@ char inf_Pg4[] = "Address:900H:700H Sector:8 Size: 1sec\n";
 char cmd[] = "MyOS>";
 char keyboardInput[30];
 enum opp{help,ls,error,cleanup};
-
+int ProcessNum = 0;
+int currentProcess = -1;
 typedef struct PCB
 {
 	int ax;
@@ -45,6 +47,7 @@ extern clean();
 extern input();
 extern proc_Pg_1();
 void printf(const char*);
+
 main(){
 	int k = 0;
 	printf(startingMsg);

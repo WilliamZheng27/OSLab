@@ -5,6 +5,7 @@ extrn _Message:near
 extrn _startingMsg:near
 extrn _strlen:near
 extrn _keyboardInput:near
+extrn _ProcessNum:near
 public _put
 public _input
 public _clean
@@ -209,6 +210,13 @@ int8_display:
 	mov es:[bx],ax
 	;变色
 	inc color
+	;时间片轮转
+	;save
+	
+	;schedule
+
+	;restart
+
 	;发送EOI
     mov al,20h
     out 20h,al
