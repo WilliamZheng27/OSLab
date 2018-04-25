@@ -45,6 +45,13 @@ datadef:
 	y dw 1
 	down_edge equ 0efch
 	up_edge equ 0a2h
+	ds_save dw ?
+	ret_save dw ?
+	si_save dw ?
+	kernelsp dw ?
+	lds_low dw ?
+	lds_high dw ?
+
 _put proc near
 	;int put(char,int)
 	;在光标位置显示一个字符
@@ -85,7 +92,8 @@ _changeline proc near
 endp
 _proc_Pg_1 proc near
 	;修改int 9h
-	call mod_int_9
+	;call mod_int_9
+	cli
 	mov bx,offset usr_pg
 	mov word ptr [bx],100h
 	mov word ptr [bx+2],900h
@@ -95,10 +103,43 @@ _proc_Pg_1 proc near
 	mov ds,ax
 	mov es,ax
 	;恢复int 9h
-	call reset_int_9
+	;call reset_int_9
 	ret
 endp
 
+_proc_Pg_2 proc near
+	;修改int 9h
+	;call mod_int_9
+	cli
+	mov bx,offset usr_pg
+	mov word ptr [bx],300h
+	mov word ptr [bx+2],900h
+	;调用用户程序
+	call  dword ptr [bx]
+	mov ax,cs
+	mov ds,ax
+	mov es,ax
+	;恢复int 9h
+	;call reset_int_9
+	ret
+endp
+
+_proc_Pg_3 proc near
+	;修改int 9h
+	;call mod_int_9
+	cli
+	mov bx,offset usr_pg
+	mov word ptr [bx],500h
+	mov word ptr [bx+2],900h
+	;调用用户程序
+	call  dword ptr [bx]
+	mov ax,cs
+	mov ds,ax
+	mov es,ax
+	;恢复int 9h
+	;call reset_int_9
+	ret
+endp
 
 _input proc near
 	mov di,offset _keyboardInput
@@ -123,116 +164,73 @@ _input proc near
 endp
 
 modded_int8:
-	;保护现场
-	push ax
-	push bx
+;save
+	;此时是被中断程序的栈
 	push ds
-	push es
-	mov ax,cs
-	mov ds,ax
-	mov ax,0b800h
-	mov es,ax
-	;判断移动方向
-	mov ax,position
-	cmp ax,0
-	je down
-	cmp ax,1
-	je right
-	cmp ax,2
-	je up
-	cmp ax,3
-	je left
-;向下移动
-down:
-    inc int8_x
-    mov ax,int8_x
-    cmp ax,25
-    je D_R
-    jmp int8_display
-    D_R:
-    mov int8_x,24
-    inc int8_y
-	mov position,1
-    jmp int8_display
-;向右移动
-right:
-    inc int8_y
-    mov ax,int8_y
-    cmp ax,80
-    je R_U
-    jmp int8_display
-    R_U:
-    dec int8_x
-    mov int8_y,79
-	mov position,2
-    jmp int8_display
-;向上移动
-up:
-    dec int8_x
-    mov ax,int8_x
-    cmp ax,-1
-    je U_L
-    jmp int8_display
-    U_L:
-    dec int8_y
-    mov int8_x,0
-	mov position,3
-    jmp int8_display
-;向左移动
-left:
-    dec int8_y
-    mov ax,int8_y
-    cmp ax,-1
-    je L_D
-    jmp int8_display
-    L_D:
-    inc int8_x
-    mov int8_y,0
-	mov position,0
-    jmp int8_display
-int8_display:
-	;控制显示范围在26个大写字母
-    cmp char,'Z'
-    jne reset_char
-    mov char,'A' - 1
-	reset_char:
-	inc char
-	mov ax,int8_x
-	mov bx,80
-	mul bx
-	add ax,int8_y
-	mov bx,2
-	mul bx
-	mov bx,ax
-	;将字符装入显存
-	mov ah,color
-	mov al,char
-	mov es:[bx],ax
-	;变色
-	inc color
-	;时间片轮转
-	;save
-	
-	;schedule
+	push cs
+	pop ds;ds=cs
+	pop word ptr [ds_save];ds_save=ds
+	pop word ptr [ret_save];ret_save=ip
+	mov word ptr[si_save],si;si_save=si
+	mov si,word ptr [_CurrentProc] ;si=*pcb currentProc
+	add si,22;跳到IP的位置
+	pop word ptr [si];
+	add si,2
+	pop word ptr [si]
+	add si,2
+	pop word ptr [si]
+	mov word ptr [si-6],sp
+	mov word ptr [si-8], ss
+	mov si,ds;si=ds=cs
+	mov ss,si;
+	mov ss,si
+	mov sp,word ptr [_CurrentProc]
+	add sp,18;跳到ds处
+	push word ptr[ds_save];保存ds
+	push es;保存es
+	push bp;保存bp
+	push di;保存di
+	push word ptr[si_save]
+	push dx
+	push cx
+	push bx
+	push ax
+	mov sp,word ptr[kernelsp]
+	mov ax,word ptr [ret_save]
+	jmp ax
 
-	;restart
-
-	;发送EOI
-    mov al,20h
-    out 20h,al
-    out 0A0h,al
-	;恢复现场
-	pop es
-	pop ds
-	pop bx
+;schedule
+	call _schedule
+;Restart
+	mov word ptr[kernelsp],sp
+	mov sp,word ptr[_CurrentProc]
 	pop ax
-    iret
-timing:
-	;设定延迟
-	dec count
-	jnz timing
-	mov count,delay
-    ret
+	pop bx
+	pop cx
+	pop dx
+	pop si
+	pop di
+	pop bp
+	pop es
+	mov word ptr[lds_low],bx
+	pop word ptr[lds_high]
+	mov bx,sp
+	mov bx,word ptr[bx]
+	mov ss,bx
+	mov bx,sp
+	add bx,2
+	mov sp,word ptr[bx]
+	push word ptr[bx+6]
+	push word ptr[bx+4]
+	push word ptr[bx+2]
+	lds bx,dword ptr[lds_low]
+	push ax
+	mov al,20h			; AL = EOI
+	out 20h,al			; 发送EOI到主8529A
+	out 0A0h,al			; 发送EOI到从8529A
+	pop ax
+	iret				; 从中断返回
+
 
 modded_int9:
 	;调用原int 9h
@@ -445,6 +443,7 @@ mod_int_8 proc near
 	sti
 	ret
 endp
+
 mod_int_9 proc near
 	;设置int 9h
 	xor ax,ax			; AX = 0
@@ -459,6 +458,7 @@ mod_int_9 proc near
 	mov es,ax
 	ret
 endp
+
 reset_int_9 proc near
 	xor ax,ax
 	mov es,ax

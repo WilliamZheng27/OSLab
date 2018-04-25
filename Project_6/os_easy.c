@@ -17,8 +17,9 @@ char inf_Pg4[] = "Address:900H:700H Sector:8 Size: 1sec\n";
 char cmd[] = "MyOS>";
 char keyboardInput[30];
 enum opp{help,ls,error,cleanup};
-int ProcessNum = 0;
-int currentProcess = -1;
+/*进程PCB*/
+int ProcessNum = 1;
+int currentProcNum = 0;
 typedef struct PCB
 {
 	int ax;
@@ -39,16 +40,18 @@ typedef struct PCB
 	char p_name;
 };
 struct PCB PCBlist[5];
-
-
+struct PCB * currentProc;
 extern put(char,int);
 extern changeline();
 extern clean();
 extern input();
 extern proc_Pg_1();
+extern proc_Pg_2();
+extern proc_Pg_3();
 void printf(const char*);
 
 main(){
+
 	int k = 0;
 	printf(startingMsg);
 	while(1){
@@ -86,7 +89,7 @@ cmd_Dispatch(){
 		printf(inf_Pg4);
     }
     else if (!strcmp(keyboardInput,"1"))
-        proc_Pg_1();
+        new_proc(1);
     else
         proc_display(error);
 
@@ -115,6 +118,16 @@ int proc_display(int stat){
         clean();
     }
 }
+new_proc(int i){
+	ProcessNum ++;
+	currentProcNum = ProcessNum - 1;
+	if (i == 1)
+		proc_Pg_1();
+	else if (i == 2)
+		proc_Pg_2();
+	else
+		proc_Pg_3();
+}
 void printf(const char * str){
 	int i = 0;
 	strlen = 0;
@@ -131,3 +144,12 @@ void printf(const char * str){
 	}
 }
 
+schedule(){
+	currentProcNum ++;
+	if (currentProcNum >= ProcessNum){
+		currentProcNum = 0;
+		currentProc = &PCBlist[0];
+	}
+	else
+		currentProc = &PCBlist[currentProcNum];
+}

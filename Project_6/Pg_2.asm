@@ -5,8 +5,8 @@ U_R equ 2
 U_L equ 3
 left_border equ 40
 right_border equ 80
-up_border equ -1
-down_border equ 13
+up_border equ 14
+down_border equ 25
 delay_t equ 500
 delay equ 800
 
@@ -23,7 +23,7 @@ start:
 	mov word [x],0
 	mov word [y],41
 	mov byte [color],1
-	call near clean
+	sti
 timing:
 
 	;设定延迟

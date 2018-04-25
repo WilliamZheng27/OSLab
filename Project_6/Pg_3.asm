@@ -23,7 +23,7 @@ start:
 	mov word [x],14
 	mov word [y],0
 	mov byte [color],1
-	call near clean
+	sti
 timing:
 
 	;设定延迟

@@ -4,10 +4,10 @@ D_R equ 0
 D_L equ 1
 U_R equ 2
 U_L equ 3
-left_border equ -1
+left_border equ 40
 right_border equ 80
 up_border equ -1
-down_border equ 25
+down_border equ 13
 delay_t equ 200
 delay equ 800
 
@@ -24,11 +24,7 @@ start:
 	mov word [x],0
 	mov word [y],0
 	mov byte [color],1
-	call near clean
-	int 34h
-	int 35h
-	int 36h
-	int 37h
+	sti
 timing:
 	;设定延迟
 	dec word [count]
