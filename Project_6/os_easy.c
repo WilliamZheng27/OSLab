@@ -9,7 +9,6 @@ char errorMsg[] = "Command not found.Please check your input.\n";
 char exitMsg[] = "Do you want to clean up the screen?[Y/N]";
 char lsTable[] = "1.Pg_1.com\n2.Pg_2.com\n3.Pg_3.com\n4.Pg_4.com";
 char inf[] = "Address:800H:100H Sector:2 Size: 3sec\n";
-char* inf_running[];
 char inf_Pg1[] = "Address:900H:100H Sector:5 Size: 1sec\n";
 char inf_Pg2[] = "Address:900H:300H Sector:6 Size: 1sec\n";
 char inf_Pg3[] = "Address:900H:500H Sector:7 Size: 1sec\n";
@@ -40,7 +39,7 @@ typedef struct PCB
 	char p_name;
 };
 struct PCB PCBlist[5];
-struct PCB * currentProc;
+struct PCB * CurrentProc;
 extern put(char,int);
 extern changeline();
 extern clean();
@@ -51,7 +50,6 @@ extern proc_Pg_3();
 void printf(const char*);
 
 main(){
-
 	int k = 0;
 	printf(startingMsg);
 	while(1){
@@ -148,8 +146,8 @@ schedule(){
 	currentProcNum ++;
 	if (currentProcNum >= ProcessNum){
 		currentProcNum = 0;
-		currentProc = &PCBlist[0];
+		CurrentProc = &PCBlist[0];
 	}
 	else
-		currentProc = &PCBlist[currentProcNum];
+		CurrentProc = &PCBlist[currentProcNum];
 }

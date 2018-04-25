@@ -6,12 +6,15 @@ extrn _startingMsg:near
 extrn _strlen:near
 extrn _keyboardInput:near
 extrn _ProcessNum:near
+extrn _CurrentProc:near
+extrn _schedule:near
 public _put
 public _input
 public _clean
 public _changeline
 public _proc_Pg_1
-
+public _proc_Pg_2
+public _proc_Pg_3
 .8086
 _TEXT segment byte public 'CODE'
 DGROUP group _TEXT,_DATA,_BSS
@@ -23,6 +26,7 @@ start:
 	mov  es,  ax           ; ES = CS
 	mov  ss,  ax           ; SS = cs
 	mov  sp, 100h
+
 	call mod_int_8
 	call _clean
 	main_shell:
@@ -166,70 +170,13 @@ endp
 modded_int8:
 ;save
 	;此时是被中断程序的栈
-	push ds
-	push cs
-	pop ds;ds=cs
-	pop word ptr [ds_save];ds_save=ds
-	pop word ptr [ret_save];ret_save=ip
-	mov word ptr[si_save],si;si_save=si
-	mov si,word ptr [_CurrentProc] ;si=*pcb currentProc
-	add si,22;跳到IP的位置
-	pop word ptr [si];
-	add si,2
-	pop word ptr [si]
-	add si,2
-	pop word ptr [si]
-	mov word ptr [si-6],sp
-	mov word ptr [si-8], ss
-	mov si,ds;si=ds=cs
-	mov ss,si;
-	mov ss,si
-	mov sp,word ptr [_CurrentProc]
-	add sp,18;跳到ds处
-	push word ptr[ds_save];保存ds
-	push es;保存es
-	push bp;保存bp
-	push di;保存di
-	push word ptr[si_save]
-	push dx
-	push cx
-	push bx
-	push ax
-	mov sp,word ptr[kernelsp]
-	mov ax,word ptr [ret_save]
-	jmp ax
 
+	call save
 ;schedule
-	call _schedule
+	ret_addr:call _schedule
 ;Restart
-	mov word ptr[kernelsp],sp
-	mov sp,word ptr[_CurrentProc]
-	pop ax
-	pop bx
-	pop cx
-	pop dx
-	pop si
-	pop di
-	pop bp
-	pop es
-	mov word ptr[lds_low],bx
-	pop word ptr[lds_high]
-	mov bx,sp
-	mov bx,word ptr[bx]
-	mov ss,bx
-	mov bx,sp
-	add bx,2
-	mov sp,word ptr[bx]
-	push word ptr[bx+6]
-	push word ptr[bx+4]
-	push word ptr[bx+2]
-	lds bx,dword ptr[lds_low]
-	push ax
-	mov al,20h			; AL = EOI
-	out 20h,al			; 发送EOI到主8529A
-	out 0A0h,al			; 发送EOI到从8529A
-	pop ax
-	iret				; 从中断返回
+	call restart
+
 
 
 modded_int9:
@@ -471,7 +418,71 @@ reset_int_9 proc near
 	ret
 endp
 
+save proc
+	push ds
+	push cs
+	pop ds;ds=cs
+	pop word ptr [ds_save];ds_save=ds
+	pop word ptr [ret_save];ret_save=ip
+	mov word ptr[si_save],si;si_save=si
+	mov si,word ptr [_CurrentProc] ;si=*pcb currentProc
+	add si,22;跳到IP的位置
+	pop word ptr [si];
+	add si,2
+	pop word ptr [si]
+	add si,2
+	pop word ptr [si]
+	mov word ptr [si-6],sp
+	mov word ptr [si-8], ss
+	mov si,ds;si=ds=cs
+	mov ss,si;
+	mov ss,si
+	mov sp,word ptr [_CurrentProc]
+	add sp,18;跳到ds处
+	push word ptr[ds_save];保存ds
+	push es;保存es
+	push bp;保存bp
+	push di;保存di
+	push word ptr[si_save]
+	push dx
+	push cx
+	push bx
+	push ax
+	mov sp,word ptr[kernelsp]
+	mov ax,word ptr [ret_save]
+	jmp ax
+endp
 
+restart proc
+	mov word ptr[kernelsp],sp
+	mov sp,word ptr[_CurrentProc]
+	pop ax
+	pop bx
+	pop cx
+	pop dx
+	pop si
+	pop di
+	pop bp
+	pop es
+	mov word ptr[lds_low],bx
+	pop word ptr[lds_high]
+	mov bx,sp
+	mov bx,word ptr[bx]
+	mov ss,bx
+	mov bx,sp
+	add bx,2
+	mov sp,word ptr[bx]
+	push word ptr[bx+6]
+	push word ptr[bx+4]
+	push word ptr[bx+2]
+	lds bx,dword ptr[lds_low]
+	push ax
+	mov al,20h			; AL = EOI
+	out 20h,al			; 发送EOI到主8529A
+	out 0A0h,al			; 发送EOI到从8529A
+	pop ax
+	iret				; 从中断返回
+endp
 
 
 
