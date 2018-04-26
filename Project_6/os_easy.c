@@ -39,7 +39,7 @@ typedef struct PCB
 	char p_name;
 };
 struct PCB PCBlist[5];
-struct PCB * CurrentProc;
+struct PCB * CurrentProc = PCBlist;
 extern put(char,int);
 extern changeline();
 extern clean();
@@ -48,6 +48,12 @@ extern proc_Pg_1();
 extern proc_Pg_2();
 extern proc_Pg_3();
 void printf(const char*);
+
+test(){
+	new_proc(1);
+	new_proc(2);
+	new_proc(3);
+}
 
 main(){
 	int k = 0;
@@ -88,6 +94,10 @@ cmd_Dispatch(){
     }
     else if (!strcmp(keyboardInput,"1"))
         new_proc(1);
+    else if (!strcmp(keyboardInput,"2"))
+        new_proc(2);
+    else if (!strcmp(keyboardInput,"3"))
+        new_proc(3);
     else
         proc_display(error);
 
@@ -118,13 +128,12 @@ int proc_display(int stat){
 }
 new_proc(int i){
 	ProcessNum ++;
-	currentProcNum = ProcessNum - 1;
 	if (i == 1)
-		proc_Pg_1();
+		PCB_init(ProcessNum - 1,0x900,0x100,0x900,0x900,0x500);
 	else if (i == 2)
-		proc_Pg_2();
+		PCB_init(ProcessNum - 1,0x900,0x300,0x900,0x900,0x600);
 	else
-		proc_Pg_3();
+		PCB_init(ProcessNum - 1,0x900,0x500,0x900,0x900,0x700);
 }
 void printf(const char * str){
 	int i = 0;
@@ -140,6 +149,16 @@ void printf(const char * str){
 		strlen ++;
 		i ++;
 	}
+}
+
+PCB_init(int n,int cs,int ip,int ds,int es, int ss){
+	PCBlist[n].cs = cs;
+	PCBlist[n].ip = ip;
+	PCBlist[n].ds = ds;
+	PCBlist[n].es = es;
+	PCBlist[n].ss = ss;
+	PCBlist[n].sp = 0x100;
+	PCBlist[n].flags = 512;
 }
 
 schedule(){

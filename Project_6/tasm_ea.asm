@@ -8,6 +8,7 @@ extrn _keyboardInput:near
 extrn _ProcessNum:near
 extrn _CurrentProc:near
 extrn _schedule:near
+extrn _test:near
 public _put
 public _input
 public _clean
@@ -55,7 +56,7 @@ datadef:
 	kernelsp dw ?
 	lds_low dw ?
 	lds_high dw ?
-
+	cmd_border dw 40
 _put proc near
 	;int put(char,int)
 	;在光标位置显示一个字符
@@ -168,12 +169,95 @@ _input proc near
 endp
 
 modded_int8:
+	push ax
+	push bx
+	push ds
+	push es
+	mov ax,cs
+	mov ds,ax
+	mov ax,0b800h
+	mov es,ax
+	mov ax,position
+	cmp ax,0
+	je down
+	cmp ax,1
+	je right
+	cmp ax,2
+	je up
+	cmp ax,3
+	je left
+down:
+    inc int8_x
+    mov ax,int8_x
+    cmp ax,25
+    je D_R
+    jmp int8_display
+    D_R:
+    mov int8_x,24
+    inc int8_y
+	mov position,1
+    jmp int8_display
+right:
+    inc int8_y
+    mov ax,int8_y
+    cmp ax,80
+    je R_U
+    jmp int8_display
+    R_U:
+    dec int8_x
+    mov int8_y,79
+	mov position,2
+    jmp int8_display
+up:
+    dec int8_x
+    mov ax,int8_x
+    cmp ax,-1
+    je U_L
+    jmp int8_display
+    U_L:
+    dec int8_y
+    mov int8_x,0
+	mov position,3
+    jmp int8_display
+left:
+    dec int8_y
+    mov ax,int8_y
+    cmp ax,-1
+    je L_D
+    jmp int8_display
+    L_D:
+    inc int8_x
+    mov int8_y,0
+	mov position,0
+    jmp int8_display
+int8_display:
+    cmp char,'Z'
+    jne reset_char
+    mov char,'A' - 1
+	reset_char:
+	inc char
+	mov ax,int8_x
+	mov bx,80
+	mul bx
+	add ax,int8_y
+	mov bx,2
+	mul bx
+	mov bx,ax
+	;将字符装入显存
+	mov ah,color
+	mov al,char
+	mov es:[bx],ax
+	inc color
+	pop es
+	pop ds
+	pop bx
+	pop ax
 ;save
 	;此时是被中断程序的栈
 
 	call save
 ;schedule
-	ret_addr:call _schedule
+	call _schedule
 ;Restart
 	call restart
 
@@ -305,7 +389,8 @@ sys_2:
 	cmp al,2
 	je ch_line
 	inc y
-	cmp y,79
+	mov bx,cmd_border
+	cmp y,bx
 	je ch_line
 	jmp put_flag
 	ch_line:
@@ -433,6 +518,7 @@ save proc
 	add si,2
 	pop word ptr [si]
 	mov word ptr [si-6],sp
+	mov [kernelsp],sp
 	mov word ptr [si-8], ss
 	mov si,ds;si=ds=cs
 	mov ss,si;

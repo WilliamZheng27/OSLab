@@ -8,8 +8,8 @@ left_border equ 40
 right_border equ 80
 up_border equ -1
 down_border equ 13
-delay_t equ 200
-delay equ 800
+delay_t equ 10
+delay equ 10
 
 org 100h
 start:
@@ -22,7 +22,7 @@ start:
 	;初始化变量
 	mov byte [direction],D_R
 	mov word [x],0
-	mov word [y],0
+	mov word [y],41
 	mov byte [color],1
 	sti
 timing:

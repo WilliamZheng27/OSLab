@@ -7,10 +7,10 @@ left_border equ -1
 right_border equ 40
 up_border equ 13
 down_border equ 25
-delay_t equ 500
-delay equ 800
+delay_t equ 10
+delay equ 10
 
-org 100h
+org 500h
 start:
 	;设定数据段偏移量
 	mov ax,cs
